@@ -16,7 +16,7 @@ using PepperDash.Essentials.DM;
 
 namespace DmMd6xnEpi
 {
-    public class DmMd6X4EssentialsDevice : CrestronGenericBridgeableBaseDevice, IDmSwitch
+    public class DmMd6X4EssentialsDevice : CrestronGenericBridgeableBaseDevice, IDmSwitchWithEndpointOnlineFeedback
     {
         private readonly DmMd6x4 _chassis;
         private readonly Dictionary<uint, IntFeedback> _currentAudioRoutes = new Dictionary<uint, IntFeedback>();
@@ -235,13 +235,29 @@ namespace DmMd6xnEpi
                 feedback.LinkInputSig(trilist.StringInput[joinActual]);
             }
         }
+
+        #region IDmSwitchWithEndpointOnlineFeedback Members
+
+        public Dictionary<uint, BoolFeedback> InputEndpointOnlineFeedbacks
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        public Dictionary<uint, BoolFeedback> OutputEndpointOnlineFeedbacks
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        #endregion
     }
 
 // ReSharper disable once InconsistentNaming
     public class DmMd6x4DeviceFactory : EssentialsPluginDeviceFactory<DmMd6X4EssentialsDevice>
     {
+        
         public DmMd6x4DeviceFactory()
         {
+            MinimumEssentialsFrameworkVersion = "1.14.3";
             TypeNames = new List<string>
                 {
                     "dmMd6x4"
