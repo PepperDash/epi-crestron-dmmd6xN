@@ -12,11 +12,10 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Core.Config;
-using PepperDash.Essentials.DM;
 
 namespace DmMd6xnEpi
 {
-    public class DmMd6X4EssentialsDevice : CrestronGenericBridgeableBaseDevice, IDmSwitchWithEndpointOnlineFeedback
+    public class DmMd6X4EssentialsDevice : CrestronGenericBridgeableBaseDevice
     {
         private readonly DmMd6x4 _chassis;
         private readonly Dictionary<uint, IntFeedback> _currentAudioRoutes = new Dictionary<uint, IntFeedback>();
@@ -35,8 +34,7 @@ namespace DmMd6xnEpi
 
             _chassis = chassis;
 
-            Debug.Console(0,
-                this,
+            Debug.LogInformation(this,
                 "----------- Device info : NumberOfInputs : {0}, NumberOfOutputs {1}",
                 _chassis.NumberOfInputs,
                 _chassis.NumberOfOutputs);
@@ -48,11 +46,11 @@ namespace DmMd6xnEpi
                         Card.DMOCard output;
                         if (!_chassis.Outputs.TryGetValue(x, out output))
                         {
-                            Debug.Console(0, this, "----- Output at value {0} doesn't exist", x);
+                            Debug.LogWarning(this, "----- Output at value {0} doesn't exist", x);
                             continue;
                         }
 
-                        Debug.Console(0,
+                        Debug.LogInformation(
                             this,
                             "----- Output {0} exists : {1} {2}",
                             x,
@@ -60,13 +58,17 @@ namespace DmMd6xnEpi
                             output.NameFeedback.StringValue);
 
                         _currentVideoRoutes.Add(x, new IntFeedback(
-                            () => output.VideoOutFeedback == null ? 0 : (int) output.VideoOutFeedback.Number));
+                            string.Format("Output{0}CurrentVideoRoute", x),
+                            () => output.VideoOutFeedback == null ? 0 : (int)output.VideoOutFeedback.Number));
 
 
                         _currentAudioRoutes.Add(x, new IntFeedback(
-                            () => output.AudioOutFeedback == null ? 0 : (int) output.AudioOutFeedback.Number));
+                            string.Format("Output{0}CurrentAudioRoute", x),
+                            () => output.AudioOutFeedback == null ? 0 : (int)output.AudioOutFeedback.Number));
 
-                        _outputNames.Add(x, new StringFeedback(() => output.NameFeedback.StringValue));
+                        _outputNames.Add(x, new StringFeedback(
+                            string.Format("Output{0}Name", x),
+                            () => output.NameFeedback.StringValue));
                     }
 
                     for (uint x = 1; x <= _chassis.NumberOfInputs; x++)
@@ -74,11 +76,13 @@ namespace DmMd6xnEpi
                         DMInput input;
                         if (!_chassis.Inputs.TryGetValue(x, out input))
                         {
-                            Debug.Console(0, this, "----- Input at value {0} doesn't exist", x);
+                            Debug.LogWarning(this, "----- Input at value {0} doesn't exist", x);
                             continue;
                         }
 
-                        _inputNames.Add(x, new StringFeedback(() => input.NameFeedback.StringValue));
+                        _inputNames.Add(x, new StringFeedback(
+                            string.Format("Input{0}Name", x),
+                            () => input.NameFeedback.StringValue));
                     }
 
                     _chassis.DMInputChange += (device, args) =>
@@ -114,7 +118,9 @@ namespace DmMd6xnEpi
                         };
 
                     EnableAudioBreakawayFeedback =
-                        new BoolFeedback(() => _chassis.EnableAudioBreakawayFeedback.BoolValue);
+                        new BoolFeedback(
+                            "EnableAudioBreakawayFeedback",
+                            () => _chassis.EnableAudioBreakawayFeedback.BoolValue);
                 });
         }
 
@@ -163,7 +169,7 @@ namespace DmMd6xnEpi
                 trilist.SetUShortSigAction(joinActual,
                     s =>
                         {
-                            Debug.Console(1, this, "Routing {0} to {1} | Video", s, index);
+                            Debug.LogVerbose(this, "Routing {0} to {1} | Video", s, index);
                             Card.DMOCard output;
                             if (!_chassis.Outputs.TryGetValue(index, out output))
                                 return;
@@ -194,7 +200,7 @@ namespace DmMd6xnEpi
                 trilist.SetUShortSigAction(joinActual,
                     s =>
                         {
-                            Debug.Console(1, this, "Routing {0} to {1} | Audio", s, index);
+                            Debug.LogVerbose(this, "Routing {0} to {1} | Audio", s, index);
                             Card.DMOCard output;
                             if (!_chassis.Outputs.TryGetValue(index, out output))
                                 return;
@@ -236,19 +242,6 @@ namespace DmMd6xnEpi
             }
         }
 
-        #region IDmSwitchWithEndpointOnlineFeedback Members
-
-        public Dictionary<uint, BoolFeedback> InputEndpointOnlineFeedbacks
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public Dictionary<uint, BoolFeedback> OutputEndpointOnlineFeedbacks
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        #endregion
     }
 
 // ReSharper disable once InconsistentNaming
